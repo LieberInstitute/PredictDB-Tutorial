@@ -5,6 +5,20 @@ suppressMessages(library(glmnet))
 suppressMessages((library(reshape2)))
 suppressMessages(library(methods))
 "%&%" <- function(a,b) paste(a,b, sep = "")
+# 
+# snp_annot_file <-
+#   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/snp_annot/snp_annot.chr1.txt"
+# gene_annot_file <-
+#   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/gencode.v25.annotationGRCh38_PARSED.gtf"
+# genotype_file <-
+#   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/split_geno/split_snp_geno.chr1.txt"
+# expression_file <-
+#   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/transformed_expression.txt"
+# covariates_file <-
+#   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/01_get_inv_quantile_norm/goesHyde_mdd_rnaseq_Amygdala.combined_covariates.txt"
+# prefix <- "goesHyde_mdd_Model_training"
+# 
+# setwd("/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/")
 
 
 get_filtered_snp_annot <- function(snp_annot_file_name) {
@@ -18,9 +32,27 @@ get_filtered_snp_annot <- function(snp_annot_file_name) {
   snp_annot
 }
 
+# genotype_file_name <- "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/split_geno/split_snp_geno.chr1.txt"
+# Real source of the problem
+# > table(duplicated(gt_df$varID))
+# 
+# FALSE  TRUE 
+# 24698     9 
+# Not duplicate rows but duplicate varIDs
+# > nrow(distinct(gt_df))
+# [1] 24707
+# > nrow(gt_df)
+# [1] 24707
 
 get_maf_filtered_genotype <- function(genotype_file_name,  maf, samples) {
-  gt_df <- read.table(genotype_file_name, header = T, stringsAsFactors = F, row.names = 1)
+  gt_df <- read.table(genotype_file_name, header = T, stringsAsFactors = F) #, row.names = 1
+  
+  #https://github.com/LieberInstitute/brainseq_phase2/blob/master/twas/filter_data/filter_snps.R#L70-L88
+  # gt_df <- gt_df[!gt_df$varID %in% gt_df[which(duplicated(gt_df$varID)),],]
+  gt_df <- gt_df[!duplicated(gt_df$varID),]
+  
+  rownames(gt_df) <- gt_df$varID
+  
   gt_df <- gt_df[,(colnames(gt_df) %in% samples )] %>% t() %>% as.data.frame()
   effect_allele_freqs <- colMeans(gt_df) / 2
   gt_df <- gt_df[,which((effect_allele_freqs >= maf) & (effect_allele_freqs <= 1 - maf))]
@@ -163,11 +195,25 @@ do_covariance <- function(gene_id, cis_gt, rsids, varIDs) {
   cov_df
 }
 
+## problem starts here
+
+# maf=0.01
+# n_folds=10
+# n_train_test_folds=5
+# seed=NA
+# cis_window=1e6
+# alpha=0.5
+# chrom=1
+
 main <- function(snp_annot_file, gene_annot_file, genotype_file, expression_file,
                  covariates_file, chrom, prefix, maf=0.01, n_folds=10, n_train_test_folds=5,
                  seed=NA, cis_window=1e6, alpha=0.5, null_testing=FALSE) {
   gene_annot <- get_gene_annotation(gene_annot_file, chrom)
   expr_df <- get_gene_expression(expression_file, gene_annot)
+  
+  # Making expression row names match those of the genotype file
+  row.names(expr_df) <- make.names(row.names(expr_df))
+  
   samples <- rownames(expr_df)
   n_samples <- length(samples)
   genes <- colnames(expr_df)
