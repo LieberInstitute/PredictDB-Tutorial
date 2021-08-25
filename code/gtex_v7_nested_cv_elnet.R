@@ -257,11 +257,11 @@ main <- function(snp_annot_file, gene_annot_file, genotype_file, expression_file
   # i = 57
   # Attempt to build model for each gene----
   
-  for (i in 1:n_genes) {
-    if (all(is.na(cis_gt))) {
-      message(paste0(i, " has no snps within window for gene"))
-    }
-  }
+  # for (i in 1:n_genes) {
+  #   if (all(is.na(cis_gt))) {
+  #     message(paste0(i, " has no snps within window for gene"))
+  #   }
+  # }
   
   for (i in 1:n_genes) {
     cat(i, "/", n_genes, "\n")
