@@ -5,7 +5,7 @@ suppressMessages(library(glmnet))
 suppressMessages((library(reshape2)))
 suppressMessages(library(methods))
 "%&%" <- function(a,b) paste(a,b, sep = "")
-# 
+
 # snp_annot_file <-
 #   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/snp_annot/snp_annot.chr1.txt"
 # gene_annot_file <-
@@ -20,6 +20,8 @@ suppressMessages(library(methods))
 # 
 # setwd("/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/")
 
+# snp_annot_file_name <-
+#   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/snp_annot/snp_annot.chr1.txt"
 
 get_filtered_snp_annot <- function(snp_annot_file_name) {
   snp_annot <- read.table(snp_annot_file_name, header = T, stringsAsFactors = F) %>%
@@ -251,7 +253,16 @@ main <- function(snp_annot_file, gene_annot_file, genotype_file, expression_file
   covariance_col <- c('GENE', 'RSID1', 'RSID2', 'VALUE')
   write(covariance_col, file = covariance_file, ncol = 4, sep = ' ')
   
+  # Getting NAs in the weight file, troubleshooting here
+  # i = 57
   # Attempt to build model for each gene----
+  
+  for (i in 1:n_genes) {
+    if (all(is.na(cis_gt))) {
+      message(paste0(i, " has no snps within window for gene"))
+    }
+  }
+  
   for (i in 1:n_genes) {
     cat(i, "/", n_genes, "\n")
     gene <- genes[i]
