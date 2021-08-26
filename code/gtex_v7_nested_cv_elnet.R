@@ -230,7 +230,7 @@ main <- function(snp_annot_file, gene_annot_file, genotype_file, expression_file
   
   # Prepare output data----
   dir.create(here::here("predixcan_pipeline", "summary"))
-  model_summary_file <- here::here("predixcan_pipeline", "summary") %&% prefix %&% '_chr' %&% chrom %&% '_model_summaries.txt'
+  model_summary_file <- here::here("predixcan_pipeline", "summary/") %&% prefix %&% '_chr' %&% chrom %&% '_model_summaries.txt'
   model_summary_cols <- c('gene_id', 'gene_name', 'gene_type', 'alpha', 'n_snps_in_window', 'n_snps_in_model', 'lambda_min_mse',
                           'test_R2_avg', 'test_R2_sd', 'cv_R2_avg', 'cv_R2_sd', 'in_sample_R2',
                           'nested_cv_fisher_pval', 'rho_avg', 'rho_se', 'rho_zscore', 'rho_avg_squared', 'zscore_pval',
@@ -238,18 +238,18 @@ main <- function(snp_annot_file, gene_annot_file, genotype_file, expression_file
   write(model_summary_cols, file = model_summary_file, ncol = 24, sep = '\t')
   
   dir.create(here::here("predixcan_pipeline", "weights"))
-  weights_file <- here::here("predixcan_pipeline", "weights") %&% prefix %&% '_chr' %&% chrom %&% '_weights.txt'
+  weights_file <- here::here("predixcan_pipeline", "weights/") %&% prefix %&% '_chr' %&% chrom %&% '_weights.txt'
   weights_col <- c('gene_id', 'rsid', 'varID', 'ref', 'alt', 'beta')
   write(weights_col, file = weights_file, ncol = 6, sep = '\t')
   
-  tiss_chr_summ_f <- here::here("predixcan_pipeline", "summary") %&% prefix %&% '_chr' %&% chrom %&% '_summary.txt'
+  tiss_chr_summ_f <- here::here("predixcan_pipeline", "summary/") %&% prefix %&% '_chr' %&% chrom %&% '_summary.txt'
   tiss_chr_summ_col <- c('n_samples', 'chrom', 'cv_seed', 'n_genes')
   tiss_chr_summ <- data.frame(n_samples, chrom, seed, n_genes)
   colnames(tiss_chr_summ) <- tiss_chr_summ_col
   write.table(tiss_chr_summ, file = tiss_chr_summ_f, quote = FALSE, row.names = FALSE, sep = '\t')
   
   dir.create(here::here("predixcan_pipeline", "covariances"))
-  covariance_file <- here::here("predixcan_pipeline", "covariances") %&% prefix %&% '_chr' %&% chrom %&% '_covariances.txt'
+  covariance_file <- here::here("predixcan_pipeline", "covariances/") %&% prefix %&% '_chr' %&% chrom %&% '_covariances.txt'
   covariance_col <- c('GENE', 'RSID1', 'RSID2', 'VALUE')
   write(covariance_col, file = covariance_file, ncol = 4, sep = ' ')
   
