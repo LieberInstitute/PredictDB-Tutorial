@@ -19,7 +19,7 @@ suppressMessages(library(methods))
 # prefix <- "goesHyde_mdd_Model_training"
 # 
 # setwd("/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/")
-
+# 
 # snp_annot_file_name <-
 #   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/snp_annot/snp_annot.chr1.txt"
 
@@ -88,6 +88,9 @@ get_cis_genotype <- function(gt_df, snp_annot, coords, cis_window) {
   if (nrow(snp_info) == 0)
     return(NA)
   #Check of the varID exist in the data
+  # TODO THIS IF-ELSE IS THE MAIN PROBLEM!!! 
+  # snp_info$varID has chrx:xxxx:A:B format
+  # names(gt_df) is all rsids
   if (TRUE %in% (snp_info$varID %in% names(gt_df))) {
   cis_gt <- gt_df %>% select(one_of(intersect(snp_info$varID, colnames(gt_df))))
   } else {
