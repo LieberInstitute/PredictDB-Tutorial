@@ -17,9 +17,9 @@ suppressMessages(library(methods))
 # covariates_file <-
 #   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/01_get_inv_quantile_norm/goesHyde_mdd_rnaseq_Amygdala.combined_covariates.txt"
 # prefix <- "goesHyde_mdd_Model_training"
-# 
+#
 # setwd("/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/")
-# 
+#
 # snp_annot_file_name <-
 #   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/snp_annot/snp_annot.chr1.txt"
 
@@ -37,9 +37,9 @@ get_filtered_snp_annot <- function(snp_annot_file_name) {
 # genotype_file_name <- "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/split_geno/split_snp_geno.chr1.txt"
 # Real source of the problem
 # > table(duplicated(gt_df$varID))
-# 
-# FALSE  TRUE 
-# 24698     9 
+#
+# FALSE  TRUE
+# 24698     9
 # Not duplicate rows but duplicate varIDs
 # > nrow(distinct(gt_df))
 # [1] 24707
@@ -48,13 +48,13 @@ get_filtered_snp_annot <- function(snp_annot_file_name) {
 
 get_maf_filtered_genotype <- function(genotype_file_name,  maf, samples) {
   gt_df <- read.table(genotype_file_name, header = T, stringsAsFactors = F) #, row.names = 1
-  
+
   #https://github.com/LieberInstitute/brainseq_phase2/blob/master/twas/filter_data/filter_snps.R#L70-L88
   # gt_df <- gt_df[!gt_df$varID %in% gt_df[which(duplicated(gt_df$varID)),],]
   gt_df <- gt_df[!duplicated(gt_df$varID),]
-  
+
   rownames(gt_df) <- gt_df$varID
-  
+
   gt_df <- gt_df[,(colnames(gt_df) %in% samples )] %>% t() %>% as.data.frame()
   effect_allele_freqs <- colMeans(gt_df) / 2
   gt_df <- gt_df[,which((effect_allele_freqs >= maf) & (effect_allele_freqs <= 1 - maf))]
@@ -88,7 +88,7 @@ get_cis_genotype <- function(gt_df, snp_annot, coords, cis_window) {
   if (nrow(snp_info) == 0)
     return(NA)
   #Check of the varID exist in the data
-  # TODO THIS IF-ELSE IS THE MAIN PROBLEM!!! 
+  # TODO THIS IF-ELSE IS THE MAIN PROBLEM!!!
   # snp_info$varID has chrx:xxxx:A:B format
   # names(gt_df) is all rsids
   if (TRUE %in% (snp_info$varID %in% names(gt_df))) {
@@ -210,15 +210,24 @@ do_covariance <- function(gene_id, cis_gt, rsids, varIDs) {
 # alpha=0.5
 # chrom=1
 
+# load(
+#   here::here(
+#     "predixcan_pipeline",
+#     "processed-data",
+#     "02_prep_inputs",
+#     "goesHyde_bipolarMdd_Genotypes_PredictDB_NO-MDS.rda"
+#   )
+# )
+
 main <- function(snp_annot_file, gene_annot_file, genotype_file, expression_file,
                  covariates_file, chrom, prefix, maf=0.01, n_folds=10, n_train_test_folds=5,
                  seed=NA, cis_window=1e6, alpha=0.5, null_testing=FALSE) {
   gene_annot <- get_gene_annotation(gene_annot_file, chrom)
   expr_df <- get_gene_expression(expression_file, gene_annot)
-  
+
   # Making expression row names match those of the genotype file
   row.names(expr_df) <- make.names(row.names(expr_df))
-  
+
   samples <- rownames(expr_df)
   n_samples <- length(samples)
   genes <- colnames(expr_df)
@@ -226,11 +235,11 @@ main <- function(snp_annot_file, gene_annot_file, genotype_file, expression_file
   snp_annot <- get_filtered_snp_annot(snp_annot_file)
   gt_df <- get_maf_filtered_genotype(genotype_file, maf, samples)
   covariates_df <- get_covariates(covariates_file, samples)
-  
+
   # Set seed----
   seed <- ifelse(is.na(seed), sample(1:1000000, 1), seed)
   set.seed(seed)
-  
+
   # Prepare output data----
   dir.create(here::here("predixcan_pipeline", "summary"))
   model_summary_file <- here::here("predixcan_pipeline", "summary/") %&% prefix %&% '_chr' %&% chrom %&% '_model_summaries.txt'
@@ -239,33 +248,40 @@ main <- function(snp_annot_file, gene_annot_file, genotype_file, expression_file
                           'nested_cv_fisher_pval', 'rho_avg', 'rho_se', 'rho_zscore', 'rho_avg_squared', 'zscore_pval',
                           'cv_rho_avg', 'cv_rho_se', 'cv_rho_avg_squared', 'cv_zscore_est', 'cv_zscore_pval', 'cv_pval_est')
   write(model_summary_cols, file = model_summary_file, ncol = 24, sep = '\t')
-  
+
   dir.create(here::here("predixcan_pipeline", "weights"))
   weights_file <- here::here("predixcan_pipeline", "weights/") %&% prefix %&% '_chr' %&% chrom %&% '_weights.txt'
   weights_col <- c('gene_id', 'rsid', 'varID', 'ref', 'alt', 'beta')
   write(weights_col, file = weights_file, ncol = 6, sep = '\t')
-  
+
   tiss_chr_summ_f <- here::here("predixcan_pipeline", "summary/") %&% prefix %&% '_chr' %&% chrom %&% '_summary.txt'
   tiss_chr_summ_col <- c('n_samples', 'chrom', 'cv_seed', 'n_genes')
   tiss_chr_summ <- data.frame(n_samples, chrom, seed, n_genes)
   colnames(tiss_chr_summ) <- tiss_chr_summ_col
   write.table(tiss_chr_summ, file = tiss_chr_summ_f, quote = FALSE, row.names = FALSE, sep = '\t')
-  
+
   dir.create(here::here("predixcan_pipeline", "covariances"))
   covariance_file <- here::here("predixcan_pipeline", "covariances/") %&% prefix %&% '_chr' %&% chrom %&% '_covariances.txt'
   covariance_col <- c('GENE', 'RSID1', 'RSID2', 'VALUE')
   write(covariance_col, file = covariance_file, ncol = 4, sep = ' ')
-  
+
   # Getting NAs in the weight file, troubleshooting here
-  # i = 57
+  # i = 65
   # Attempt to build model for each gene----
-  
+
   # for (i in 1:n_genes) {
+  #
+  #   gene <- genes[i]
+  #   gene_name <- gene_annot$gene_name[gene_annot$gene_id == gene]
+  #   gene_type <- get_gene_type(gene_annot, gene)
+  #   coords <- get_gene_coords(gene_annot, gene)
+  #   cis_gt <- get_cis_genotype(gt_df, snp_annot, coords, cis_window)
+  #
   #   if (all(is.na(cis_gt))) {
   #     message(paste0(i, " has no snps within window for gene"))
   #   }
   # }
-  
+
   for (i in 1:n_genes) {
     cat(i, "/", n_genes, "\n")
     gene <- genes[i]
@@ -317,7 +333,7 @@ main <- function(snp_annot_file, gene_annot_file, genotype_file, expression_file
         cv_R2_sd <- sd(cv_R2_folds)
         adj_expr_pred <- predict(fit, as.matrix(cis_gt), s = 'lambda.min')
         training_R2 <- calc_R2(adj_expression, adj_expr_pred)
-        
+
         cv_rho_avg <- mean(cv_corr_folds)
         cv_rho_se <- sd(cv_corr_folds)
         cv_rho_avg_squared <- cv_rho_avg**2
@@ -325,9 +341,9 @@ main <- function(snp_annot_file, gene_annot_file, genotype_file, expression_file
         cv_zscore_est <- sum(cv_zscore_folds) / sqrt(n_folds)
         cv_zscore_pval <- 2*pnorm(abs(cv_zscore_est), lower.tail = FALSE)
         cv_pval_est <- pchisq(-2 * sum(log(cv_pval_folds)), 2*n_folds, lower.tail = F)
-        
+
         if (fit$nzero[best_lam_ind] > 0) {
-          
+
           weights <- fit$glmnet.fit$beta[which(fit$glmnet.fit$beta[,best_lam_ind] != 0), best_lam_ind]
           weighted_snps <- names(fit$glmnet.fit$beta[,best_lam_ind])[which(fit$glmnet.fit$beta[,best_lam_ind] != 0)]
           weighted_snps_info <- snp_annot %>% filter(varID %in% weighted_snps) %>% select(rsid, varID, ref_vcf, alt_vcf)

@@ -21,7 +21,7 @@ expression_file <-
   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/02_prep_inputs/transformed_expression.txt"
 covariates_file <-
   "/dcl01/lieber/ajaffe/lab/goesHyde_mdd_rnaseq/predixcan_pipeline/processed-data/01_get_inv_quantile_norm/goesHyde_mdd_rnaseq_Amygdala.combined_covariates.txt"
-prefix <- "goesHyde_mdd_Model_training"
+prefix <- "goesHyde_mdd_Amygada_Model_training"
 
 main(
   snp_annot_file,
